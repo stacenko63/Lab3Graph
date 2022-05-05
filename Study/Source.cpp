@@ -2,8 +2,10 @@
 #include <vector>
 #include <list>
 #include <algorithm>
+#include <queue>
 using namespace std;
 
+//Вариант 1: 0·2^1 + 1·2^0 = 01    (обход в ширину и алгоритм Беллмана-Форда) 
 
 class Locality {
 
@@ -56,14 +58,11 @@ struct Edge {
 	double length;
 };
 
-//bool operator==(const Edge& lhs, const Edge& rhs) {
-//	return lhs.value == rhs.value && lhs.length == rhs.length; 
-//}
-
 struct Vertex {
 	Vertex(const Locality& Locality) : locality(Locality) {}
 	Locality locality;
 	list<Edge> edges;
+	bool check = false; 
 };
 
 ostream& operator<<(ostream& out, const Edge& edge) {
@@ -109,6 +108,12 @@ private:
 			});
 	}
 
+	void change_flags() {
+		for (auto el : table) {
+			el.check = false;
+		}
+	}
+
 public:
 
 
@@ -143,7 +148,7 @@ public:
 		result.edges.erase(it_edge); 
 	}
 
-	void print() {
+	void print() const {
 		for (auto el : table) {
 			cout << el << ":  ";
 			for (auto element : el.edges) {
@@ -153,7 +158,33 @@ public:
 		}
 	}
 
+	void traversing_in_width(const Locality& locality) {
+		queue<Vertex&> q;
+		auto it = check_vertex_existence(locality);
+		if (it == end(table)) 
+			throw "Указанная вершина отсутствует!"; 
+		Vertex& result = *it; 
+		q.push(result);  
+		do {
+			result = q.back(); 
+			q.pop();
+			result.check = true; 
+			for (auto el : result.edges) {
+				auto element = check_vertex_existence(el.value);
+				Vertex& tmp = *element;
+				if (!tmp.check) q.push(tmp); 
+			} 
+		} while (!q.empty()); 
+		change_flags();  
+	}
 
+	list<Vertex> get_latest_way(const Locality& from, const Locality& to) {
+		auto it = check_vertexes_existence(from, to);
+		list<Vertex> result;
+		 
+
+		return result;
+	}
 };
 
 
