@@ -56,6 +56,10 @@ struct Edge {
 	double length;
 };
 
+//bool operator==(const Edge& lhs, const Edge& rhs) {
+//	return lhs.value == rhs.value && lhs.length == rhs.length; 
+//}
+
 struct Vertex {
 	Vertex(const Locality& Locality) : locality(Locality) {}
 	Locality locality;
@@ -85,22 +89,22 @@ private:
 
 	vector<Vertex> table;  
 
+	vector<Vertex>::iterator check_vertex_existence(const Locality& locality) {
+		return find_if(begin(table), end(table), [locality](const Vertex& vertex) {
+			return vertex.locality == locality;
+			});
+	}
+
 	vector<Vertex>::iterator check_vertexes_existence(const Locality& first, const Locality& second) {
 		auto it = check_vertex_existence(first);
 		if (it == end(table) || check_vertex_existence(second) == end(table)) {
 			throw "Данные вершины отсутствуют!";
 		}
-		return it; 
-	}
-
-	vector<Vertex>::iterator check_vertex_existence(const Locality& locality) {
-		return find(begin(table), end(table), [locality](const Vertex& vertex) {
-			return vertex.locality == locality;
-			});
+		return it;
 	}
 
 	list<Edge>::const_iterator check_edge_existence(const Vertex& vertex, const Locality& locality) {
-		return find(begin(vertex.edges), end(vertex.edges), [locality](const Edge& edge) {
+		return find_if(begin(vertex.edges), end(vertex.edges), [locality](const Edge& edge) {
 			return locality == edge.value;
 			});
 	}
@@ -110,7 +114,7 @@ public:
 
 
 	void add_vertex(const Locality& locality) {
-		if (find(begin(table), end(table), locality) != end(table)) 
+		if (check_vertex_existence(locality) != end(table))
 			throw "Указанная вершина уже присутствует!";
 		table.push_back(Vertex(locality)); 
 	}
@@ -155,5 +159,5 @@ public:
 
 int main() {
 	setlocale(LC_ALL, "RUS"); 
-
+	RoadNetwork rn; 
 }
