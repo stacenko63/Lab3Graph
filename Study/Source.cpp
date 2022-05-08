@@ -157,26 +157,31 @@ public:
 		}
 	}
 
-	//void traversing_in_width(const Locality& locality) {
-	//	queue<Vertex&> q;
-	//	auto it = check_vertex_existence(locality);
-	//	if (it == end(table)) 
-	//		throw "”казанна€ вершина отсутствует!"; 
-	//	Vertex& result = *it; 
-	//	q.push(result);  
-	//	do {
-	//		result = q.back(); 
-	//		cout << result.locality << " , ";
-	//		q.pop();
-	//		result.check = true; 
-	//		for (auto el : result.edges) {
-	//			auto element = check_vertex_existence(el.value);
-	//			Vertex& tmp = *element;
-	//			if (!tmp.check) q.push(tmp); 
-	//		} 
-	//	} while (!q.empty()); 
-	//	change_flags();  
-	//}
+
+	void traversing_in_width(const Locality& locality) {
+		queue<Vertex> q;
+		auto it = check_vertex_existence(locality);
+		if (it == end(table))
+			throw "”казанна€ вершина отсутствует!";
+		Vertex& begin = *it;
+		begin.check = true;   
+		q.push(begin); 
+		do {
+			Vertex result = q.back(); 
+			cout << result.locality << " , ";
+			q.pop();
+			for (auto el : result.edges) {
+				auto element = check_vertex_existence(el.value);
+				Vertex& tmp = *element;  
+				if (!tmp.check) {
+					tmp.check = true;  
+					q.push(tmp);
+				}
+			}
+		} while (!q.empty());
+		change_flags();
+	}
+
 
 	//struct str {
 	//	double v;
@@ -216,10 +221,13 @@ int main() {
 		rn.add_vertex(Locality("Sochi", 100));
 
 		rn.add_edge(Locality("Samara", 1000000), Locality("Moscow", 2000000), 350);
-		rn.add_edge(Locality("Sochi", 100), Locality("Saint-Peterburg", 10000), 200);
+		rn.add_edge(Locality("Moscow", 2000000), Locality("Saint-Peterburg", 10000), 200);
+		rn.add_edge(Locality("Saint-Peterburg", 10000), Locality("Sochi", 100), 200);
+		rn.add_edge(Locality("Sochi", 100), Locality("Samara", 1000000), 200);
 
 		rn.print();  
 
+		rn.traversing_in_width(Locality("Samara", 1000000));
 	}
 	catch (const char* ex) {
 		cout << ex;  
