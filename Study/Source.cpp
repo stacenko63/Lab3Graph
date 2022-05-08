@@ -60,6 +60,11 @@ struct Edge {
 	double length;
 };
 
+struct EdgeForBellmanFord {
+	Locality from, to;  
+	double length;  
+};
+
 struct Vertex {
 	Vertex(const Locality& Locality) : locality(Locality) {}
 	Locality locality;
@@ -115,6 +120,10 @@ private:
 		for (auto el : table) {
 			el.check = false;
 		}
+	}
+
+	void get_the_shortest_ways_list() {
+
 	}
 
 public:
@@ -183,31 +192,41 @@ public:
 	}
 
 
-	//struct str {
-	//	double v;
-	//	str* prev;  
-	//};
+	struct e {
+		Locality from, to;
+		double length; 
+	};
 
-	//list<Vertex> get_latest_way(const Locality& from, const Locality& to) { //алгоритм Беллмана-Форда
-	//	auto it = check_vertexes_existence(from, to);
-	//	list<Vertex> result {*it};
-	//	vector<vector<double>> v;
-	//	v.resize(table.size());
-	//	for (int i = 0; i < table.size(); i++) {
-	//		v[i].resize(table.size());
-	//	}
-	//	for (int i = 0; i < table.size(); i++) {
-	//		v[0][i] = numeric_limits<int>::infinity();
-	//	}
-	//	v[0][it-begin(table)] = 0; 
-	//	for (int i = 1; i < table.size(); i++) {
-	//		for (int j = 0; j < table.size(); j++) {
-	//			v[i][j] = table[i].edges[];
-	//		}
-	//	}
-	//	reverse(begin(result), end(result)); 
-	//	return result;
-	//}
+
+	list<Vertex> get_latest_way(const Locality& from, const Locality& to) { //алгоритм Беллмана-Форда
+		auto it = check_vertexes_existence(from, to); 
+		list<Vertex> result {*it};
+		vector<vector<double>> v;
+		v.resize(table.size());
+		for (int i = 0; i < table.size(); i++) {
+			v[i].resize(table.size());
+		}
+		for (int i = 0; i < table.size(); i++) {
+			v[0][i] = numeric_limits<int>::infinity();
+		}
+		v[0][it-begin(table)] = 0;  
+
+
+
+
+
+
+		for (int i = 0; i < table.size(); i++) {
+			for (auto el : table[i].edges) {
+
+			}
+		}
+
+
+		reverse(begin(result), end(result)); 
+		change_flags();  
+		return result;
+	}
 };
 
 
