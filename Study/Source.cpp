@@ -6,7 +6,6 @@
 #include <limits>
 #include <iterator>
 #include <map>
-#include <unordered_map>
 using namespace std;
 
 //Вариант 1: 0·2^1 + 1·2^0 = 01    (обход в ширину и алгоритм Беллмана-Форда) 
@@ -23,6 +22,11 @@ public:
 	Locality(const string& name, int population) {
 		set_name(name);
 		set_population(population); 
+	}
+
+	Locality() {
+		set_name("Samara");
+		set_population(1000);
 	}
 
 	int set_population(int population) {
@@ -57,6 +61,28 @@ bool operator==(const Locality& lhs, const Locality& rhs) {
 bool operator!=(const Locality& lhs, const Locality& rhs) {
 	return !(lhs == rhs);
 }
+
+bool operator<(const Locality& lhs, const Locality& rhs) {
+	return lhs.get_name() < rhs.get_name();  
+}
+
+struct Node {
+	double length;
+	Locality prev;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -96,11 +122,6 @@ class RoadNetwork {
 private:
 
 	vector<Vertex> table;  
-
-	struct Node {
-		double length;
-		Locality prev;
-	};
 
 	vector<Vertex>::iterator check_vertex_existence(const Locality& locality) {
 		return find_if(begin(table), end(table), [locality](const Vertex& vertex) {
@@ -193,30 +214,33 @@ public:
 		change_flags();
 	}
 
+	struct Node {
+		double length;
+		Locality prev;
+	};
 
 	list<Locality> find_the_shortest_way(const Locality& from_id, const Locality& to_id) { //алгоритм Беллмана-Форда
-
-		unordered_map<Locality, Node> m; 
+		map<Locality, Node> m; 
 		for (int i = 0; i < table.size(); i++) {
 			m[table[i].locality].length = 10'000'000;
 		}
 		m[from_id].length = 0;
-		//if (!m.count(from_id) || !m.count(to_id)) throw "Данных верших нет в графе!";
-		//for (int i = 0; i <= table.size(); i++) {
-		//	for (int j = 0; j < table.size(); j++) {
-		//		auto it = begin(table[j].edges);
-		//		while (it != end(table[j].edges)) {
-		//			if (it->length + m[table[j].locality].length < m[it->value].length) {
-		//				if (i != table.size()) {
-		//					m[it->value].length = it->length + m[table[j].locality].length;
-		//					m[it->value].prev = table[j].locality;
-		//				}
-		//				else throw "В графе присутствует отрицательный цикл";
-		//			}
-		//			it++;
-		//		}
-		//	}
-		//}
+		if (!m.count(from_id) || !m.count(to_id)) throw "Данных верших нет в графе!";
+		for (int i = 0; i <= table.size(); i++) {
+			for (int j = 0; j < table.size(); j++) {
+				auto it = begin(table[j].edges);
+				while (it != end(table[j].edges)) {
+					if (it->length + m[table[j].locality].length < m[it->value].length) {
+						if (i != table.size()) {
+							m[it->value].length = it->length + m[table[j].locality].length;
+							m[it->value].prev = table[j].locality;
+						}
+						else throw "В графе присутствует отрицательный цикл";
+					}
+					it++;
+				} 
+			} 
+		}
 		if (m[to_id].length == 10'000'000) throw "Путь отсутствует!";
 		list<Locality> result{ to_id };
 		Locality value = m[to_id].prev;
@@ -237,8 +261,8 @@ int main() {
 		RoadNetwork rn;
 		Locality samara1 = Locality("Samara", 1000000); 
 		Locality moscow2 = Locality("Moscow", 2000000); 
-		Locality saint_peterburg3 = Locality("Moscow", 10000);  
-		Locality sochi4 = Locality("Moscow", 100); 
+		Locality saint_peterburg3 = Locality("Saint_Peterburg", 10000);  
+		Locality sochi4 = Locality("Sochi", 100); 
 		Locality volgograd5 = Locality("Volgograd", 1000); 
 		Locality voronesh6 = Locality("Voronesh", 20000);
 
