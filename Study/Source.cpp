@@ -73,7 +73,6 @@ struct Node {
 };
 
 //конструктор с параметрами и по умолчанию
-//перегружен оператор вывода
 //перегружен оператор ==
 //перегружен оператор !=
 //перегружен <
@@ -93,10 +92,42 @@ struct Node {
 
 
 
-struct Edge {
-	Edge(const Locality& locality, double Length = 1) : value(locality), length(Length) {}
+class Edge {
+
+private:
+
 	Locality value;
-	double length;
+	double length;    
+	bool isPay; 
+	bool isGround; 
+
+public:
+
+	Edge(const Locality& locality, bool IsGround, bool IsPay, double Length) : 
+		value(locality), isGround(IsGround), isPay(IsPay), length(Length) {} 
+
+	double get_length_with_ratios(double groundRatio, double payRatio) const {
+		double result = length;
+		if (isGround) result *= groundRatio;
+		if (isPay) result *= payRatio;
+		return result;  
+	}
+
+	double get_length_without_ratios() const {
+		return length;  
+	}
+
+	Locality get_value() const {
+		return value; 
+	}
+
+	bool get_pay_flag() const {
+		return isPay;
+	}
+
+	bool get_ground_flag() const {
+		return isGround; 
+	}
 };
 
 struct Vertex {
@@ -107,7 +138,8 @@ struct Vertex {
 };
 
 ostream& operator<<(ostream& out, const Edge& edge) {
-	out << "( " << edge.value << ", Length = " << edge.length << " )";
+	out << "( " << edge.get_value() << " , Length = " << edge.get_length_without_ratios() << " , IsPay = " << 
+		!edge.get_pay_flag() << " , IsGround = " << edge.get_ground_flag() << " )"; 
 	return out;
 }
 
@@ -123,20 +155,20 @@ ostream& operator<<(ostream& out, const Vertex& vertex) {
 
 
 
-
+template <typename TVertex, typename TEdge>  
 class RoadNetwork {
 	
 private:
 
-	vector<Vertex> table;  
+	vector<TVertex> table;  
 
-	vector<Vertex>::iterator check_vertex_existence(const Locality& locality) {
-		return find_if(begin(table), end(table), [locality](const Vertex& vertex) {
+	auto check_vertex_existence(const Locality& locality) {
+		return find_if(begin(table), end(table), [locality](const TVertex& vertex) {
 			return vertex.locality == locality;
 			});
 	}
 
-	vector<Vertex>::iterator check_vertexes_existence(const Locality& first, const Locality& second) {
+	auto check_vertexes_existence(const Locality& first, const Locality& second) {
 		auto it = check_vertex_existence(first);
 		if (it == end(table) || check_vertex_existence(second) == end(table)) {
 			throw "Данные вершины отсутствуют!";
@@ -144,9 +176,9 @@ private:
 		return it;
 	}
 
-	list<Edge>::const_iterator check_edge_existence(const Vertex& vertex, const Locality& locality) {
-		return find_if(begin(vertex.edges), end(vertex.edges), [locality](const Edge& edge) {
-			return locality == edge.value;
+	auto check_edge_existence(const TVertex& vertex, const Locality& locality) {
+		return find_if(begin(vertex.edges), end(vertex.edges), [locality](const TEdge& edge) {
+			return locality == edge.get_value();
 			});
 	}
 
@@ -163,14 +195,14 @@ public:
 	void add_vertex(const Locality& locality) {
 		if (check_vertex_existence(locality) != end(table))
 			throw "Указанная вершина уже присутствует!";
-		table.push_back(Vertex(locality)); 
+		table.push_back(TVertex(locality));  
 	}
 
-	void add_edge(const Locality& from, const Locality& to, double length) {
+	void add_edge(const Locality& from, const Locality& to, TEdge edge) {
 		auto it = check_vertexes_existence(from, to); 
 		if (check_edge_existence(table[it-table.begin()], to) != end(table[it - table.begin()].edges))
 			throw "Эти ребра уже итак смежны!";
-		table[it - table.begin()].edges.push_back(Edge(to, length));
+		table[it - table.begin()].edges.push_back(edge); 
 	}
 
 	void del_vertex(const Locality& locality) {
@@ -196,14 +228,14 @@ public:
 
 
 	void traversing_in_width(const Locality& locality) {
-		queue<Vertex> q;
+		queue<TVertex> q;
 		auto it = check_vertex_existence(locality);
 		if (it == end(table))
 			throw "Указанная вершина отсутствует!";
 		table[it - table.begin()].check = true;
 		q.push(table[it - table.begin()]);
  		do {
-			Vertex result = q.front(); 
+			TVertex result = q.front(); 
 			cout << result.locality << "\n";
 			q.pop();
 			for (auto el : result.edges) {
@@ -217,7 +249,7 @@ public:
 		change_flags();
 	}
 
-	list<Locality> find_the_shortest_way(const Locality& from_id, const Locality& to_id) { //алгоритм Беллмана-Форда
+	list<Locality> find_the_shortest_way(const Locality& from_id, const Locality& to_id, double groundRatio = 1, double payRatio = 1) { //алгоритм Беллмана-Форда
 		map<Locality, Node> m; 
 		for (int i = 0; i < table.size(); i++) {
 			m[table[i].locality].length = 10'000'000;
@@ -228,10 +260,10 @@ public:
 			for (int j = 0; j < table.size(); j++) {
 				auto it = begin(table[j].edges);
 				while (it != end(table[j].edges)) {
-					if (it->length + m[table[j].locality].length < m[it->value].length) {
+					if (it->get_length_with_ratios(groundRatio, payRatio) + m[table[j].locality].length < m[it->get_value()].length) {
 						if (i != table.size()) {
-							m[it->value].length = it->length + m[table[j].locality].length;
-							m[it->value].prev = table[j].locality;
+							m[it->get_value()].length = it->get_length_with_ratios(groundRatio, payRatio) + m[table[j].locality].length;
+							m[it->get_value()].prev = table[j].locality;
 						}
 						else throw "В графе присутствует отрицательный цикл";
 					}
@@ -256,7 +288,7 @@ public:
 int main() {
 	setlocale(LC_ALL, "RUS"); 
 	try {
-		RoadNetwork rn;
+		RoadNetwork<Vertex, Edge> rn; 
 		Locality samara = Locality("Samara1", 1000000); 
 		Locality moscow = Locality("Moscow2", 2000000); 
 		Locality saint_peterburg = Locality("Saint_Peterburg3", 10000);  
@@ -271,19 +303,18 @@ int main() {
 		rn.add_vertex(volgograd);
 		rn.add_vertex(voronesh); 
 
-		rn.add_edge(samara, moscow, 7);
-		rn.add_edge(samara, volgograd, 9);
-		rn.add_edge(samara, saint_peterburg, 5);
-		rn.add_edge(moscow, sochi, 4);
-		rn.add_edge(moscow, saint_peterburg, -8);
-		rn.add_edge(saint_peterburg, sochi, 3);
-		rn.add_edge(saint_peterburg, volgograd, 6);
-		rn.add_edge(sochi, voronesh, 8);
-		rn.add_edge(volgograd, sochi, -4);
-		rn.add_edge(volgograd, voronesh, 6);
+		rn.add_edge(samara, moscow, Edge(moscow, false, false, 7));
+		rn.add_edge(samara, volgograd, Edge(volgograd, false, false, 9));
+		rn.add_edge(samara, saint_peterburg, Edge(saint_peterburg, false, false, 5));
+		rn.add_edge(moscow, sochi, Edge(sochi, false, false, 4));
+		rn.add_edge(moscow, saint_peterburg, Edge(saint_peterburg, false, false, -8));
+		rn.add_edge(saint_peterburg, sochi, Edge(sochi, false, false, 3));
+		rn.add_edge(saint_peterburg, volgograd, Edge(volgograd, false, false, 6));
+		rn.add_edge(sochi, voronesh, Edge(voronesh, false, false, 8));
+		rn.add_edge(volgograd, sochi, Edge(sochi, false, false, -4));
+		rn.add_edge(volgograd, voronesh, Edge(voronesh, false, false, 6)); 
 		
-		//rn.traversing_in_width(samara);
-
+		rn.print(); 
 
 
 		cout << "\n\n\n";
