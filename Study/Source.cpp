@@ -5,6 +5,8 @@
 #include <queue>
 #include <limits>
 #include <iterator>
+#include <map>
+#include <unordered_map>
 using namespace std;
 
 //Вариант 1: 0·2^1 + 1·2^0 = 01    (обход в ширину и алгоритм Беллмана-Форда) 
@@ -52,17 +54,16 @@ bool operator==(const Locality& lhs, const Locality& rhs) {
 	return lhs.get_name() == rhs.get_name() && lhs.get_population() == rhs.get_population(); 
 }
 
+bool operator!=(const Locality& lhs, const Locality& rhs) {
+	return !(lhs == rhs);
+}
+
 
 
 struct Edge {
 	Edge(const Locality& locality, double Length = 1) : value(locality), length(Length) {}
 	Locality value;
 	double length;
-};
-
-struct EdgeForBellmanFord {
-	Locality from, to;  
-	double length;  
 };
 
 struct Vertex {
@@ -96,6 +97,11 @@ private:
 
 	vector<Vertex> table;  
 
+	struct Node {
+		double length;
+		Locality prev;
+	};
+
 	vector<Vertex>::iterator check_vertex_existence(const Locality& locality) {
 		return find_if(begin(table), end(table), [locality](const Vertex& vertex) {
 			return vertex.locality == locality;
@@ -120,10 +126,6 @@ private:
 		for (auto el : table) {
 			el.check = false;
 		}
-	}
-
-	void get_the_shortest_ways_list() {
-
 	}
 
 public:
@@ -192,41 +194,40 @@ public:
 	}
 
 
-	struct e {
-		Locality from, to;
-		double length; 
-	};
+	list<Locality> find_the_shortest_way(const Locality& from_id, const Locality& to_id) { //алгоритм Беллмана-Форда
 
-
-	list<Vertex> get_latest_way(const Locality& from, const Locality& to) { //алгоритм Беллмана-Форда
-		auto it = check_vertexes_existence(from, to); 
-		list<Vertex> result {*it};
-		vector<vector<double>> v;
-		v.resize(table.size());
+		unordered_map<Locality, Node> m; 
 		for (int i = 0; i < table.size(); i++) {
-			v[i].resize(table.size());
+			m[table[i].locality].length = 10'000'000;
 		}
-		for (int i = 0; i < table.size(); i++) {
-			v[0][i] = numeric_limits<int>::infinity();
+		m[from_id].length = 0;
+		//if (!m.count(from_id) || !m.count(to_id)) throw "Данных верших нет в графе!";
+		//for (int i = 0; i <= table.size(); i++) {
+		//	for (int j = 0; j < table.size(); j++) {
+		//		auto it = begin(table[j].edges);
+		//		while (it != end(table[j].edges)) {
+		//			if (it->length + m[table[j].locality].length < m[it->value].length) {
+		//				if (i != table.size()) {
+		//					m[it->value].length = it->length + m[table[j].locality].length;
+		//					m[it->value].prev = table[j].locality;
+		//				}
+		//				else throw "В графе присутствует отрицательный цикл";
+		//			}
+		//			it++;
+		//		}
+		//	}
+		//}
+		if (m[to_id].length == 10'000'000) throw "Путь отсутствует!";
+		list<Locality> result{ to_id };
+		Locality value = m[to_id].prev;
+		while (value != from_id) {
+			result.push_front(value);
+			value = m[value].prev;
 		}
-		v[0][it-begin(table)] = 0;  
-
-
-
-
-
-
-		for (int i = 0; i < table.size(); i++) {
-			for (auto el : table[i].edges) {
-
-			}
-		}
-
-
-		reverse(begin(result), end(result)); 
-		change_flags();  
+		result.push_front(from_id);
 		return result;
 	}
+		
 };
 
 
@@ -234,19 +235,39 @@ int main() {
 	setlocale(LC_ALL, "RUS"); 
 	try {
 		RoadNetwork rn;
-		rn.add_vertex(Locality("Samara", 1000000));
-		rn.add_vertex(Locality("Moscow", 2000000));
-		rn.add_vertex(Locality("Saint-Peterburg", 10000));
-		rn.add_vertex(Locality("Sochi", 100));
+		Locality samara1 = Locality("Samara", 1000000); 
+		Locality moscow2 = Locality("Moscow", 2000000); 
+		Locality saint_peterburg3 = Locality("Moscow", 10000);  
+		Locality sochi4 = Locality("Moscow", 100); 
+		Locality volgograd5 = Locality("Volgograd", 1000); 
+		Locality voronesh6 = Locality("Voronesh", 20000);
 
-		rn.add_edge(Locality("Samara", 1000000), Locality("Moscow", 2000000), 350);
-		rn.add_edge(Locality("Moscow", 2000000), Locality("Saint-Peterburg", 10000), 200);
-		rn.add_edge(Locality("Saint-Peterburg", 10000), Locality("Sochi", 100), 200);
-		rn.add_edge(Locality("Sochi", 100), Locality("Samara", 1000000), 200);
+		rn.add_vertex(samara1);
+		rn.add_vertex(moscow2);
+		rn.add_vertex(saint_peterburg3);
+		rn.add_vertex(sochi4);
+		rn.add_vertex(volgograd5);
+		rn.add_vertex(voronesh6); 
+
+		rn.add_edge(samara1, moscow2, 7);
+		rn.add_edge(samara1, volgograd5, 9);
+		rn.add_edge(samara1, saint_peterburg3, 5);
+		rn.add_edge(moscow2, sochi4, 4);
+		rn.add_edge(moscow2, saint_peterburg3, -8);
+		rn.add_edge(saint_peterburg3, sochi4, 3);
+		rn.add_edge(saint_peterburg3, volgograd5, 6);
+		rn.add_edge(sochi4, voronesh6, 8);
+		rn.add_edge(volgograd5, sochi4, -4);
+		rn.add_edge(volgograd5, voronesh6, 6);
+		
 
 		rn.print();  
 
-		rn.traversing_in_width(Locality("Samara", 1000000));
+		cout << "\n\n\n";
+		auto result = rn.find_the_shortest_way(samara1, voronesh6);
+		for (auto el : result) {
+			cout << el << " -> ";
+		}
 	}
 	catch (const char* ex) {
 		cout << ex;  
