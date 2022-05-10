@@ -66,10 +66,17 @@ bool operator<(const Locality& lhs, const Locality& rhs) {
 	return lhs.get_name() < rhs.get_name();  
 }
 
+
 struct Node {
 	double length;
 	Locality prev;
 };
+
+//конструктор с параметрами и по умолчанию
+//перегружен оператор вывода
+//перегружен оператор ==
+//перегружен оператор !=
+//перегружен <
 
 
 
@@ -160,11 +167,10 @@ public:
 	}
 
 	void add_edge(const Locality& from, const Locality& to, double length) {
-		auto it = check_vertexes_existence(from, to);
-		Vertex& result = *it; 
-		if (check_edge_existence(result, to) != end(result.edges))
+		auto it = check_vertexes_existence(from, to); 
+		if (check_edge_existence(table[it-table.begin()], to) != end(table[it - table.begin()].edges))
 			throw "Ёти ребра уже итак смежны!";
-		result.edges.push_back(Edge(to, length)); 
+		table[it - table.begin()].edges.push_back(Edge(to, length));
 	}
 
 	void del_vertex(const Locality& locality) {
@@ -176,11 +182,10 @@ public:
 
 	void del_edge(const Locality& from, const Locality& to) {
 		auto it = check_vertexes_existence(from, to); 
-		Vertex& result = *it; 
-		auto it_edge = check_edge_existence(result, to);
-		if (it_edge == end(result.edges))
+		auto it_edge = check_edge_existence(table[it-table.begin()], to);
+		if (it_edge == end(table[it - table.begin()].edges))
 			throw "Ёти ребра уже итак несмежны!";
-		result.edges.erase(it_edge); 
+		table[it - table.begin()].edges.erase(it_edge);
 	}
 
 	void print() const {
@@ -195,29 +200,22 @@ public:
 		auto it = check_vertex_existence(locality);
 		if (it == end(table))
 			throw "”казанна€ вершина отсутствует!";
-		Vertex& begin = *it;
-		begin.check = true;   
-		q.push(begin); 
-		do {
-			Vertex result = q.back(); 
-			cout << result.locality << " , ";
+		table[it - table.begin()].check = true;
+		q.push(table[it - table.begin()]);
+ 		do {
+			Vertex result = q.front(); 
+			cout << result.locality << "\n";
 			q.pop();
 			for (auto el : result.edges) {
-				auto element = check_vertex_existence(el.value);
-				Vertex& tmp = *element;  
-				if (!tmp.check) {
-					tmp.check = true;  
-					q.push(tmp);
+				auto it = check_vertex_existence(el.value);
+				if (!table[it - table.begin()].check) {
+					table[it - table.begin()].check = true;
+					q.push(table[it - table.begin()]);
 				}
 			}
 		} while (!q.empty());
 		change_flags();
 	}
-
-	struct Node {
-		double length;
-		Locality prev;
-	};
 
 	list<Locality> find_the_shortest_way(const Locality& from_id, const Locality& to_id) { //алгоритм Ѕеллмана-‘орда
 		map<Locality, Node> m; 
@@ -259,36 +257,37 @@ int main() {
 	setlocale(LC_ALL, "RUS"); 
 	try {
 		RoadNetwork rn;
-		Locality samara1 = Locality("Samara", 1000000); 
-		Locality moscow2 = Locality("Moscow", 2000000); 
-		Locality saint_peterburg3 = Locality("Saint_Peterburg", 10000);  
-		Locality sochi4 = Locality("Sochi", 100); 
-		Locality volgograd5 = Locality("Volgograd", 1000); 
-		Locality voronesh6 = Locality("Voronesh", 20000);
+		Locality samara = Locality("Samara1", 1000000); 
+		Locality moscow = Locality("Moscow2", 2000000); 
+		Locality saint_peterburg = Locality("Saint_Peterburg3", 10000);  
+		Locality sochi = Locality("Sochi4", 100); 
+		Locality volgograd = Locality("Volgograd5", 1000); 
+		Locality voronesh = Locality("Voronesh6", 20000);
 
-		rn.add_vertex(samara1);
-		rn.add_vertex(moscow2);
-		rn.add_vertex(saint_peterburg3);
-		rn.add_vertex(sochi4);
-		rn.add_vertex(volgograd5);
-		rn.add_vertex(voronesh6); 
+		rn.add_vertex(samara);
+		rn.add_vertex(moscow);
+		rn.add_vertex(saint_peterburg);
+		rn.add_vertex(sochi);
+		rn.add_vertex(volgograd);
+		rn.add_vertex(voronesh); 
 
-		rn.add_edge(samara1, moscow2, 7);
-		rn.add_edge(samara1, volgograd5, 9);
-		rn.add_edge(samara1, saint_peterburg3, 5);
-		rn.add_edge(moscow2, sochi4, 4);
-		rn.add_edge(moscow2, saint_peterburg3, -8);
-		rn.add_edge(saint_peterburg3, sochi4, 3);
-		rn.add_edge(saint_peterburg3, volgograd5, 6);
-		rn.add_edge(sochi4, voronesh6, 8);
-		rn.add_edge(volgograd5, sochi4, -4);
-		rn.add_edge(volgograd5, voronesh6, 6);
+		rn.add_edge(samara, moscow, 7);
+		rn.add_edge(samara, volgograd, 9);
+		rn.add_edge(samara, saint_peterburg, 5);
+		rn.add_edge(moscow, sochi, 4);
+		rn.add_edge(moscow, saint_peterburg, -8);
+		rn.add_edge(saint_peterburg, sochi, 3);
+		rn.add_edge(saint_peterburg, volgograd, 6);
+		rn.add_edge(sochi, voronesh, 8);
+		rn.add_edge(volgograd, sochi, -4);
+		rn.add_edge(volgograd, voronesh, 6);
 		
+		//rn.traversing_in_width(samara);
 
-		rn.print();  
+
 
 		cout << "\n\n\n";
-		auto result = rn.find_the_shortest_way(samara1, voronesh6);
+		auto result = rn.find_the_shortest_way(samara, voronesh);
 		for (auto el : result) {
 			cout << el << " -> ";
 		}
