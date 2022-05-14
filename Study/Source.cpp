@@ -143,15 +143,14 @@ struct Vertex {
 	Locality locality;
 	list<Edge> edges;
 	bool check = false; 
+
+
 };
 
-//bool operator==(const Vertex& lhs, const Vertex& rhs) {
-//	return lhs.locality == rhs.locality;
-//}
-//
-//bool operator!=(const Vertex& lhs, const Vertex& rhs) {
-//	return !(lhs == rhs);
-//}
+
+
+
+
 
 bool operator<(const Vertex& lhs, const Vertex& rhs) {
 	return lhs.locality < rhs.locality;
@@ -161,6 +160,19 @@ ostream& operator<<(ostream& out, const Vertex& vertex) {
 	out << vertex.locality;
 	return out; 
 }
+
+
+//
+//template<typename TVertex>
+//bool operator==(const TVertex& lhs, const TVertex& rhs) {
+//	return false;
+//}
+
+bool operator==(const Vertex& lhs, const Vertex& rhs) {
+	return lhs.locality == rhs.locality;
+}
+
+
 
 
 
@@ -199,9 +211,15 @@ private:
 		}
 	}
 
+	template<typename TWeightSelector>
+	void Method(double length, TWeightSelector weightSelector) {
+		TEdge edge = length; 
+		double weigth = weightSelector(edge); 
+	}
+
 	auto check_vertex_existence(const TVertex& vert) {
 		return find_if(begin(table), end(table), [vert](const Vert& vertex) {
-			return TCompare()(vertex.id, vert);  
+			return TCompare()(vertex.id, vert);   
 			});
 	}
 
@@ -222,34 +240,38 @@ public:
 
 	void del_vertex(const TVertex& vertex) {
 		auto it = check_vertex_existence(vertex); 
-		if (it == end(table))
+		if (it == end(table)) {
 			throw "Указанная вершина уже отсутствует!";
-		table.erase(it);
+		}
+		if (it != end(table)) {
+			table.erase(it);
+		}
 	}
 
 	void add_edge(const TVertex& from, const TVertex& to, const TEdge& edge) {
-		//auto it = check_vertexes_existence(from, to);
-	
-		//auto tmp = table[it - table.begin()].edges;  
-		//auto i = find_if(begin(tmp), end(tmp), [to](const E& e) {
-		//	return TCompare()(e.to, to); 
-		//	});
+		auto it = check_vertexes_existence(from, to);
+		if (it != end(table)) {
+			auto tmp = table[it - table.begin()].edges;
+			auto i = find_if(begin(tmp), end(tmp), [to](const E& e) {
+				return TCompare()(e.to, to);
+				});
 
-		//if (i != end(tmp)) throw "Данные ребра уже итак смежны!"; 
-		//table[it - table.begin()].edges.push_back(E(to, edge));
+			if (i != end(tmp)) throw "Данные ребра уже итак смежны!";
+			table[it - table.begin()].edges.push_back(E(to, edge));
+		}
 	}
 
 
 	void del_edge(const TVertex& from, const TVertex& to) {
-		//auto it = check_vertexes_existence(from, to); 
-		//
-		//auto it_edge = find_if(begin(table[it - table.begin()].edges), end(table[it - table.begin()].edges),
-		//	[to](const E& edge) {
-		//		//return edge.to == to;
-		//		return TCompare()(edge.to, to); 
-		//	});
-		//if (it_edge == end(table[it - table.begin()].edges)) throw "Эти ребра уже итак несмежны!"; 
-		//table[it - table.begin()].edges.erase(it_edge);
+		auto it = check_vertexes_existence(from, to); 
+		if (it != end(table)) {
+			auto it_edge = find_if(begin(table[it - table.begin()].edges), end(table[it - table.begin()].edges),
+				[to](const E& edge) {
+					return TCompare()(edge.to, to);
+				});
+			if (it_edge == end(table[it - table.begin()].edges)) throw "Эти ребра уже итак несмежны!";
+			table[it - table.begin()].edges.erase(it_edge);
+		}
 	}
 
 	void print() const {
@@ -264,61 +286,65 @@ public:
 	}
 
 
-	//void traversing_in_width(const TVertex& start) {///несвязный граф??
-	//	queue<Vert> q; 
-	//	auto it = check_vertex_existence(start); 
-	//	if (it == end(table))
-	//		throw "Указанная вершина отсутствует!";
+	void traversing_in_width(const TVertex& start) {///несвязный граф??
+		queue<Vert> q; 
+		auto it = check_vertex_existence(start); 
+		if (it == end(table)) {
+			throw "Указанная вершина отсутствует!";
+		}
+		if (it != end(table)) {
+			table[it - table.begin()].check = true;
+			q.push(table[it - table.begin()]);
+			do {
+				Vert result = q.front();
+				cout << result.id << "\n";
+				q.pop();
+				for (auto el : result.edges) {
+					auto it = check_vertex_existence(el.to);
+					if (it != end(table)) {
+						if (!table[it - table.begin()].check) {
+							table[it - table.begin()].check = true;
+							q.push(table[it - table.begin()]);
+						}
+					}
+				}
+			} while (!q.empty());
+			change_flags();
+		}
+	}
 
-	//	table[it - table.begin()].check = true;
-	//	q.push(table[it - table.begin()]); 
- //		do {
-	//		Vert result = q.front();  
-	//		cout << result.id << "\n"; 
-	//		q.pop();
-	//		for (auto el : result.edges) {
-	//			auto it = check_vertex_existence(el.to); 
-	//			if (!table[it - table.begin()].check) {
-	//				table[it - table.begin()].check = true;
-	//				q.push(table[it - table.begin()]);
-	//			}
-	//		}
-	//	} while (!q.empty());
-	//	change_flags();
-	//}
-
-	//list<TVertex> find_the_shortest_way(const TVertex& from_id, const TVertex& to_id) { //алгоритм Беллмана-Форда
-	//	map<TVertex, Node> m; 
-	//	for (int i = 0; i < table.size(); i++) {
-	//		m[table[i].id].length = 10'000'000;
-	//	}
-	//	m[from_id].length = 0;
-	//	if (!m.count(from_id) || !m.count(to_id)) throw "Данных верших нет в графе!";
-	//	for (int i = 0; i <= table.size(); i++) {
-	//		for (int j = 0; j < table.size(); j++) {
-	//			auto it = begin(table[j].edges);
-	//			while (it != end(table[j].edges)) {
-	//				if (static_cast<double>(it->edge) + m[table[j].id].length < m[it->to].length) {
-	//					if (i != table.size()) {
-	//						m[it->to].length = static_cast<double>(it->edge) + m[table[j].id].length;
-	//						m[it->to].prev = table[j].id;
-	//					}
-	//					else throw "В графе присутствует отрицательный цикл";
-	//				}
-	//				it++;
-	//			}
-	//		}
-	//	}
-	//	if (m[to_id].length == 10'000'000) throw "Путь отсутствует!";
-	//	list<TVertex> result{ to_id };
-	//	TVertex value = m[to_id].prev;
-	//	while (TCompare()(value, from_id)) {
-	//		result.push_front(value);
-	//		value = m[value].prev;
-	//	}
-	//	result.push_front(from_id);
-	//	return result;
-	//}
+	list<TVertex> find_the_shortest_way(const TVertex& from_id, const TVertex& to_id) { //алгоритм Беллмана-Форда
+		map<TVertex, Node> m; 
+		for (int i = 0; i < table.size(); i++) {
+			m[table[i].id].length = 10'000'000;
+		}
+		m[from_id].length = 0;
+		if (!m.count(from_id) || !m.count(to_id)) throw "Данных верших нет в графе!";
+		for (int i = 0; i <= table.size(); i++) {
+			for (int j = 0; j < table.size(); j++) {
+				auto it = begin(table[j].edges);
+				while (it != end(table[j].edges)) {
+					if (static_cast<double>(it->edge) + m[table[j].id].length < m[it->to].length) {
+						if (i != table.size()) {
+							m[it->to].length = static_cast<double>(it->edge) + m[table[j].id].length;
+							m[it->to].prev = table[j].id;
+						}
+						else throw "В графе присутствует отрицательный цикл";
+					}
+					it++;
+				}
+			}
+		}
+		if (m[to_id].length == 10'000'000) throw "Путь отсутствует!";
+		list<TVertex> result{ to_id };
+		TVertex value = m[to_id].prev;
+		while (!TCompare()(value, from_id)) {
+			result.push_front(value);
+			value = m[value].prev;
+		}
+		result.push_front(from_id);
+		return result;
+	}
 		
 };
 
@@ -329,7 +355,7 @@ int main() {
 	setlocale(LC_ALL, "RUS"); 
 	try {
 
-		RoadNetwork<Vertex, Edge, true> rn; 
+		RoadNetwork<Vertex, Edge> rn; 
 		Locality samara = Locality("Samara1", 1000000); 
 		Locality moscow = Locality("Moscow2", 2000000); 
 		Locality saint_peterburg = Locality("Saint_Peterburg3", 10000);  
@@ -349,29 +375,28 @@ int main() {
 
 
 
-		//rn.add_edge(Vertex(samara), Vertex(moscow), Edge(moscow, false, false, 7, 1, 1));
-		//rn.add_edge(samara, volgograd, Edge(volgograd, false, false, 9, 1, 1));
-		//rn.add_edge(samara, saint_peterburg, Edge(saint_peterburg, false, false, 5, 1, 1));
-		//rn.add_edge(moscow, sochi, Edge(sochi, false, false, 4, 1, 1));
-		//rn.add_edge(moscow, saint_peterburg, Edge(saint_peterburg, false, false, -8, 1, 1));
-		//rn.add_edge(saint_peterburg, sochi, Edge(sochi, false, false, 3, 1, 1));
-		//rn.add_edge(saint_peterburg, volgograd, Edge(volgograd, false, false, 6, 1, 1));
-		//rn.add_edge(sochi, voronesh, Edge(voronesh, false, false, 8, 1, 1));
-		//rn.add_edge(volgograd, sochi, Edge(sochi, false, false, -4, 1, 1));
-		//rn.add_edge(volgograd, voronesh, Edge(voronesh, false, false, 6, 1, 1)); 
-		
+		rn.add_edge(Vertex(samara), Vertex(moscow), Edge(moscow, false, false, 7, 1, 1));
+		rn.add_edge(samara, volgograd, Edge(volgograd, false, false, 9, 1, 1));
+		rn.add_edge(samara, saint_peterburg, Edge(saint_peterburg, false, false, 5, 1, 1));
+		rn.add_edge(moscow, sochi, Edge(sochi, false, false, 4, 1, 1));
+		rn.add_edge(moscow, saint_peterburg, Edge(saint_peterburg, false, false, -8, 1, 1));
+		rn.add_edge(saint_peterburg, sochi, Edge(sochi, false, false, 3, 1, 1));
+		rn.add_edge(saint_peterburg, volgograd, Edge(volgograd, false, false, 6, 1, 1));
+		rn.add_edge(sochi, voronesh, Edge(voronesh, false, false, 8, 1, 1));
+		rn.add_edge(volgograd, sochi, Edge(sochi, false, false, -4, 1, 1));
+		rn.add_edge(volgograd, voronesh, Edge(voronesh, false, false, 6, 1, 1)); 
 		rn.print(); 
 
-		//cout << "\n\n\n";
+		cout << "\n\n\n";
 
-		//rn.traversing_in_width(samara);  
+		rn.traversing_in_width(samara);  
 
-		//cout << "\n\n\n";
+		cout << "\n\n\n";
 
-		//auto result = rn.find_the_shortest_way(samara, voronesh);
-		//for (auto el : result) {
-		//	cout << el << " "; 
-		//}
+		auto result = rn.find_the_shortest_way(samara, voronesh);
+		for (auto el : result) {
+			cout << el << " "; 
+		}
 		
 	}
 	catch (const char* ex) {
