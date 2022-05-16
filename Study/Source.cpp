@@ -152,9 +152,9 @@ struct Vertex {
 
 
 
-bool operator<(const Vertex& lhs, const Vertex& rhs) {
-	return lhs.locality < rhs.locality;
-}
+//bool operator<(const Vertex& lhs, const Vertex& rhs) {
+//	return lhs.locality < rhs.locality;
+//}
 
 ostream& operator<<(ostream& out, const Vertex& vertex) {
 	out << vertex.locality;
@@ -199,6 +199,8 @@ private:
 	};
 
 	struct Node {
+		Node(double Length) : length(Length) {}
+		Node() : length(10'000'000) {}
 		double length;
 		TVertex prev;
 	};
@@ -228,6 +230,12 @@ private:
 		if (it == end(table) || check_vertex_existence(second) == end(table))
 			throw "Данные вершины отсутствуют!";
 		return it;  
+	}
+
+	auto find(const TVertex& vert) {
+		return find_if(begin(table), end(table), [vert](const Vert& element) {
+			return vert == element.id;
+			});
 	}
 
 public:
@@ -314,20 +322,54 @@ public:
 	}
 
 	list<TVertex> find_the_shortest_way(const TVertex& from_id, const TVertex& to_id) { //алгоритм Беллмана-Форда
-		map<TVertex, Node> m; 
+		//map<TVertex, Node> m; 
+		//for (int i = 0; i < table.size(); i++) {
+		//	m[table[i].id].length = 10'000'000;
+		//}
+		//m[from_id].length = 0;
+		//if (!m.count(from_id) || !m.count(to_id)) throw "Данных верших нет в графе!";
+		//for (int i = 0; i <= table.size(); i++) {
+		//	for (int j = 0; j < table.size(); j++) {
+		//		auto it = begin(table[j].edges);
+		//		while (it != end(table[j].edges)) {
+		//			if (static_cast<double>(it->edge) + m[table[j].id].length < m[it->to].length) {
+		//				if (i != table.size()) {
+		//					m[it->to].length = static_cast<double>(it->edge) + m[table[j].id].length;
+		//					m[it->to].prev = table[j].id;
+		//				}
+		//				else throw "В графе присутствует отрицательный цикл";
+		//			}
+		//			it++;
+		//		}
+		//	}
+		//}
+		//if (m[to_id].length == 10'000'000) throw "Путь отсутствует!";
+		//list<TVertex> result{ to_id };
+		//TVertex value = m[to_id].prev;
+		//while (!TCompare()(value, from_id)) {
+		//	result.push_front(value);
+		//	value = m[value].prev;
+		//}
+		//result.push_front(from_id);
+		//return result;
+
+
+		vector<pair<TVertex, Node>> v(table.size());
 		for (int i = 0; i < table.size(); i++) {
-			m[table[i].id].length = 10'000'000;
+			v[i] = pair<TVertex, Node>(table[i].id, Node(10'000'000));  
 		}
-		m[from_id].length = 0;
-		if (!m.count(from_id) || !m.count(to_id)) throw "Данных верших нет в графе!";
+
+		v[find(from_id) - table.begin()].second.length = 0; 
+
+		if (find(from_id) == end(table) || find(to_id) == end(table)) throw "Данных верших нет в графе!";
 		for (int i = 0; i <= table.size(); i++) {
 			for (int j = 0; j < table.size(); j++) {
 				auto it = begin(table[j].edges);
 				while (it != end(table[j].edges)) {
-					if (static_cast<double>(it->edge) + m[table[j].id].length < m[it->to].length) {
+					if (static_cast<double>(it->edge) + v[find(table[j].id)-table.begin()].second.length < v[find(it->to)-table.begin()].second.length) {
 						if (i != table.size()) {
-							m[it->to].length = static_cast<double>(it->edge) + m[table[j].id].length;
-							m[it->to].prev = table[j].id;
+							v[find(it->to)-table.begin()].second.length = static_cast<double>(it->edge) + v[find(table[j].id) - table.begin()].second.length;
+							v[find(it->to) - table.begin()].second.prev = table[j].id;
 						}
 						else throw "В графе присутствует отрицательный цикл";
 					}
@@ -335,14 +377,14 @@ public:
 				}
 			}
 		}
-		if (m[to_id].length == 10'000'000) throw "Путь отсутствует!";
+		if (v[find(to_id)-table.begin()].second.length == 10'000'000) throw "Путь отсутствует!";
 		list<TVertex> result{ to_id };
-		TVertex value = m[to_id].prev;
+		TVertex value = v[find(to_id) - table.begin()].second.prev;
 		while (!TCompare()(value, from_id)) {
 			result.push_front(value);
-			value = m[value].prev;
+			value = v[find(value) - table.begin()].second.prev;
 		}
-		result.push_front(from_id);
+		result.push_front(from_id); 
 		return result;
 	}
 		
@@ -365,6 +407,7 @@ int main() {
 
 		Edge e(samara, false, false, 4, 1, 1); 
 		double a = static_cast<double>(e); 
+		a = e;  
 
 		rn.add_vertex(Vertex(samara));
 		rn.add_vertex(Vertex(moscow));
