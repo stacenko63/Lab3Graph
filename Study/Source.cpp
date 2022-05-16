@@ -143,18 +143,11 @@ struct Vertex {
 	Locality locality;
 	list<Edge> edges;
 	bool check = false; 
-
-
 };
 
 
 
 
-
-
-//bool operator<(const Vertex& lhs, const Vertex& rhs) {
-//	return lhs.locality < rhs.locality;
-//}
 
 ostream& operator<<(ostream& out, const Vertex& vertex) {
 	out << vertex.locality;
@@ -198,14 +191,14 @@ private:
 		TEdge edge;  
 	};
 
+	vector<Vert> table;
+
 	struct Node {
 		Node(double Length) : length(Length) {}
 		Node() : length(10'000'000) {}
 		double length;
 		TVertex prev;
 	};
-
-	vector<Vert> table;   
 
 	void change_flags() {
 		for (auto el : table) {
@@ -322,44 +315,13 @@ public:
 	}
 
 	list<TVertex> find_the_shortest_way(const TVertex& from_id, const TVertex& to_id) { //алгоритм Беллмана-Форда
-		//map<TVertex, Node> m; 
-		//for (int i = 0; i < table.size(); i++) {
-		//	m[table[i].id].length = 10'000'000;
-		//}
-		//m[from_id].length = 0;
-		//if (!m.count(from_id) || !m.count(to_id)) throw "Данных верших нет в графе!";
-		//for (int i = 0; i <= table.size(); i++) {
-		//	for (int j = 0; j < table.size(); j++) {
-		//		auto it = begin(table[j].edges);
-		//		while (it != end(table[j].edges)) {
-		//			if (static_cast<double>(it->edge) + m[table[j].id].length < m[it->to].length) {
-		//				if (i != table.size()) {
-		//					m[it->to].length = static_cast<double>(it->edge) + m[table[j].id].length;
-		//					m[it->to].prev = table[j].id;
-		//				}
-		//				else throw "В графе присутствует отрицательный цикл";
-		//			}
-		//			it++;
-		//		}
-		//	}
-		//}
-		//if (m[to_id].length == 10'000'000) throw "Путь отсутствует!";
-		//list<TVertex> result{ to_id };
-		//TVertex value = m[to_id].prev;
-		//while (!TCompare()(value, from_id)) {
-		//	result.push_front(value);
-		//	value = m[value].prev;
-		//}
-		//result.push_front(from_id);
-		//return result;
-
-
 		vector<pair<TVertex, Node>> v(table.size());
 		for (int i = 0; i < table.size(); i++) {
+
 			v[i] = pair<TVertex, Node>(table[i].id, Node(10'000'000));  
 		}
 
-		v[find(from_id) - table.begin()].second.length = 0; 
+		v[find(from_id) - table.begin()].second.length = 0;   
 
 		if (find(from_id) == end(table) || find(to_id) == end(table)) throw "Данных верших нет в графе!";
 		for (int i = 0; i <= table.size(); i++) {
