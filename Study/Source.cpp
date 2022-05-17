@@ -155,11 +155,11 @@ ostream& operator<<(ostream& out, const Vertex& vertex) {
 }
 
 
-//
-//template<typename TVertex>
-//bool operator==(const TVertex& lhs, const TVertex& rhs) {
-//	return false;
-//}
+
+template<typename TVertex>
+bool operator==(const TVertex& lhs, const TVertex& rhs) {
+	return false;
+}
 
 bool operator==(const Vertex& lhs, const Vertex& rhs) {
 	return lhs.locality == rhs.locality;
